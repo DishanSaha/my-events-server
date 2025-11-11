@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const app = express();
 const port = process.env.PORT || 3000;
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config();
 
 
@@ -30,11 +30,37 @@ async function run() {
         await client.connect();
         const sebajatraDB = client.db('sebajatra_db');
         const upcomingEvents = sebajatraDB.collection('upcomingEvents')
+        const userCollection = sebajatraDB.collection('users');
+
+
 
         app.get('/upcoming-events', async (req, res) => {
             const cursor = upcomingEvents.find();
             const result = await cursor.toArray();
             res.send(result)
+        })
+
+        app.get('/upcoming-events/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) }
+            const result = await upcomingEvents.findOne(query);
+            res.send(result)
+        })
+
+
+        // save database new google user login data----
+        app.post('/user', async (req, res) => {
+            const newUser = req.body;
+            const email = req.body.email;
+            const query = { email: email };
+            const existUser = await userCollection.findOne(query);
+            if (existUser) {
+                res.send({ message: 'user already exists.DO not need to insert again' })
+            }
+            else {
+                const result = await userCollection.insertOne(newUser)
+                res.send(result)
+            }
         })
 
 
