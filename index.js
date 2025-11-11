@@ -70,6 +70,19 @@ async function run() {
             res.send(result);
         })
 
+        // get joined event? email =user@12.com----
+        app.get('/joined-evnet', async (req, res) => {
+            const email = req.query.email;
+            if (!email) {
+                return res.status(400).send({ message: "email required" });
+            }
+            const events = await createEventCollection
+                .find({ userEmail: email })
+                .sort({ data: 1 })
+                .toArray();
+            res.send(events)
+        })
+
 
         await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
