@@ -31,7 +31,7 @@ async function run() {
         const sebajatraDB = client.db('sebajatra_db');
         const upcomingEvents = sebajatraDB.collection('upcomingEvents')
         const userCollection = sebajatraDB.collection('users');
-
+        const createEventCollection = sebajatraDB.collection('createEvent')
 
 
         app.get('/upcoming-events', async (req, res) => {
@@ -61,6 +61,13 @@ async function run() {
                 const result = await userCollection.insertOne(newUser)
                 res.send(result)
             }
+        })
+
+        // createEvent user save database---
+        app.post('/create-event', async (req, res) => {
+            const newEvent = req.body;
+            const result = await createEventCollection.insertOne(newEvent);
+            res.send(result);
         })
 
 
