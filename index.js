@@ -79,7 +79,7 @@ async function run() {
             const events = await createEventCollection.find({ email }).toArray();
             res.send(events)
         });
-        
+
         // update manageEvent-----
         app.put('/create-event/:id', async (req, res) => {
             const id = req.params.id;
@@ -97,6 +97,23 @@ async function run() {
             res.send(result)
         });
 
+        // Delete Event(only if user owns it)
+        app.delete('/create-event/:id', async (req, res) => {
+            const id = req.params.id;
+            const email = req.query.email;
+            const event = await createEventCollection.findOne({ _id: new ObjectId(id) });
+
+            if (!event) {
+                return res.status(404).send({ message: "Event not found." });
+            }
+
+            if (event.email !== email) {
+                return res.status(403).send({ message: "Unauthorized: You can only delete your own event." });
+            }
+
+            const result = await createEventCollection.deleteOne({ _id: new ObjectId(id) });
+            res.send(result);
+        })
 
 
         await client.db("admin").command({ ping: 1 });
