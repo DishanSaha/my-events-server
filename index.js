@@ -70,18 +70,33 @@ async function run() {
             res.send(result);
         })
 
-        // get joined event? email =user@12.com----
-        app.get('/joined-evnet', async (req, res) => {
+        // get joined all events? email =user@12.com----
+        app.get('/create-event', async (req, res) => {
             const email = req.query.email;
             if (!email) {
-                return res.status(400).send({ message: "email required" });
+                return res.status(400).send({ message: "email is required" });
             }
-            const events = await createEventCollection
-                .find({ userEmail: email })
-                .sort({ data: 1 })
-                .toArray();
+            const events = await createEventCollection.find({ email }).toArray();
             res.send(events)
-        })
+        });
+        
+        // update manageEvent-----
+        app.put('/create-event/:id', async (req, res) => {
+            const id = req.params.id;
+            const updateData = req.body;
+            const email = updateData.email;
+            if (!email) {
+                return res.status(400).send({ message: "Email is required for validation." });
+            }
+            const existingEvent = await createEventCollection.findOne({ _id: new ObjectId(id) });
+            if (existingEvent.email !== email) {
+                return res.status(403).send({ message: "Unauthorized: You can only update your own event." });
+            }
+            const result = await createEventCollection.updateOne({ _id: new ObjectId(id) },
+                { $set: updateData });
+            res.send(result)
+        });
+
 
 
         await client.db("admin").command({ ping: 1 });
