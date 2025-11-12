@@ -32,7 +32,7 @@ async function run() {
         const upcomingEvents = sebajatraDB.collection('upcomingEvents')
         const userCollection = sebajatraDB.collection('users');
         const createEventCollection = sebajatraDB.collection('createEvent')
-
+        const joinedEventsCollection = sebajatraDB.collection('joinedEvents');
 
         app.get('/upcoming-events', async (req, res) => {
             const cursor = upcomingEvents.find();
@@ -114,6 +114,79 @@ async function run() {
             const result = await createEventCollection.deleteOne({ _id: new ObjectId(id) });
             res.send(result);
         })
+
+        // Assuming Express & MongoDB setup
+        // app.post('/join-event', async (req, res) => {
+        //     const { eventId, userEmail } = req.body;
+
+        //     if (!eventId || !userEmail) {
+        //         return res.status(400).send({ message: "Event ID and User Email are required" });
+        //     }
+
+        //     try {
+        //         const existing = await joinedEventsCollection.findOne({ eventId, userEmail });
+        //         if (existing) return res.status(400).send({ message: "Already joined" });
+
+        //         const event = await createEventCollection.findOne({ _id: new ObjectId(eventId) });
+        //         if (!event) return res.status(404).send({ message: "Event not found" });
+
+        //         await joinedEventsCollection.insertOne({
+        //             userEmail,
+        //             eventId,
+        //             title: event.title,
+        //             type: event.type,
+        //             description: event.description,
+        //             image: event.image,
+        //             location: event.location,
+        //             date: event.date,
+        //             joinedAt: new Date()
+        //         });
+
+        //         res.send({ message: "Event joined successfully" });
+        //     } catch (err) {
+        //         console.error(err);
+        //         res.status(500).send({ message: "Server error" });
+        //     }
+        // });
+
+
+        // app.get('/joined-events', async (req, res) => {
+        //     const userEmail = req.query.email;
+        //     if (!userEmail) return res.status(400).send({ message: "User email is required" });
+
+        //     try {
+        //         const events = await joinedEventsCollection
+        //             .find({ userEmail })
+        //             .sort({ date: 1 })  // Sort by event date
+        //             .toArray();
+        //         res.send(events);
+        //     } catch (err) {
+        //         res.status(500).send({ message: "Server error" });
+        //     }
+        // });
+
+
+        // ✅ POST: Join an event
+        app.post('/joined-events', async (req, res) => {
+            const joinedEvent = req.body;
+            const result = await joinedEventsCollection.insertOne(joinedEvent);
+            res.send(result);
+        });
+
+        // ✅ GET: Get all joined events for a specific user
+        app.get('/joined-events', async (req, res) => {
+            const email = req.query.email;
+            if (!email) {
+                return res.status(400).send({ message: "email is required" });
+            }
+
+            const events = await joinedEventsCollection
+                .find({ email })
+                .sort({ date: 1 }) // Sort by event date
+                .toArray();
+
+            res.send(events);
+        });
 
 
         await client.db("admin").command({ ping: 1 });
