@@ -115,63 +115,35 @@ async function run() {
             res.send(result);
         })
 
-        // Assuming Express & MongoDB setup
-        // app.post('/join-event', async (req, res) => {
-        //     const { eventId, userEmail } = req.body;
-
-        //     if (!eventId || !userEmail) {
-        //         return res.status(400).send({ message: "Event ID and User Email are required" });
-        //     }
-
-        //     try {
-        //         const existing = await joinedEventsCollection.findOne({ eventId, userEmail });
-        //         if (existing) return res.status(400).send({ message: "Already joined" });
-
-        //         const event = await createEventCollection.findOne({ _id: new ObjectId(eventId) });
-        //         if (!event) return res.status(404).send({ message: "Event not found" });
-
-        //         await joinedEventsCollection.insertOne({
-        //             userEmail,
-        //             eventId,
-        //             title: event.title,
-        //             type: event.type,
-        //             description: event.description,
-        //             image: event.image,
-        //             location: event.location,
-        //             date: event.date,
-        //             joinedAt: new Date()
-        //         });
-
-        //         res.send({ message: "Event joined successfully" });
-        //     } catch (err) {
-        //         console.error(err);
-        //         res.status(500).send({ message: "Server error" });
-        //     }
+        // Join an event
+        // app.post('/joined-events', async (req, res) => {
+        //     const joinedEvent = req.body;
+        //     const result = await joinedEventsCollection.insertOne(joinedEvent);
+        //     res.send(result);
         // });
 
+        app.post("/joined-events", async (req, res) => {
+            try {
+                const { eventId, email, title, type, date, joinedAt } = req.body;
 
-        // app.get('/joined-events', async (req, res) => {
-        //     const userEmail = req.query.email;
-        //     if (!userEmail) return res.status(400).send({ message: "User email is required" });
+                if (!eventId || !email) {
+                    return res.status(400).send({ message: "Missing required fields" });
+                }
 
-        //     try {
-        //         const events = await joinedEventsCollection
-        //             .find({ userEmail })
-        //             .sort({ date: 1 })  // Sort by event date
-        //             .toArray();
-        //         res.send(events);
-        //     } catch (err) {
-        //         res.status(500).send({ message: "Server error" });
-        //     }
-        // });
+                // Check if user already joined
+                const alreadyJoined = await joinedEventsCollection.findOne({ eventId, email });
+                if (alreadyJoined) {
+                    return res.status(400).send({ message: "You have already joined this event" });
+                }
 
-
-        // ✅ POST: Join an event
-        app.post('/joined-events', async (req, res) => {
-            const joinedEvent = req.body;
-            const result = await joinedEventsCollection.insertOne(joinedEvent);
-            res.send(result);
+                await joinedEventsCollection.insertOne({ eventId, title, type, date, email, joinedAt });
+                res.status(201).send({ message: "Event joined successfully" });
+            } catch (err) {
+                console.error("Error in /joined-events:", err);
+                res.status(500).send({ message: "Internal server error" });
+            }
         });
+
 
         // ✅ GET: Get all joined events for a specific user
         app.get('/joined-events', async (req, res) => {
@@ -187,6 +159,59 @@ async function run() {
 
             res.send(events);
         });
+
+        // save user data---
+        app.post('/users', async (req, res) => {
+            const user = req.body;
+
+            const existingUser = await userCollection.findOne({ email: user.email });
+            if (existingUser) {
+                return res.status(400).send({ message: "User already exists" });
+            }
+            const result = await userCollection.insertOne(user);
+            res.send(result);
+        })
+
+        // login endpoint----
+        app.post("/login", async (req, res) => {
+            const { email, password } = req.body;
+
+            if (!email || !password) {
+                return res.status(400).send({ message: "Email and password are required" });
+            }
+
+            const user = await usersCollection.findOne({ email });
+
+            if (!user) {
+                return res.status(401).send({ message: "User not found" });
+            }
+
+            // If you stored plain passwords
+            if (user.password !== password) {
+                return res.status(401).send({ message: "Invalid password" });
+            }
+
+            res.status(200).send({ message: "Login successful", user });
+        });
+
+        app.post("/joined-events", async (req, res) => {
+            try {
+                console.log("Received data:", req.body);  // <- log the request body
+                const eventData = req.body;
+
+                if (!eventData.email || !eventData.eventId) {
+                    return res.status(400).send({ message: "Missing required fields" });
+                }
+
+                await joinedEventsCollection.insertOne(eventData);
+                res.status(201).send({ message: "Event joined successfully" });
+            } catch (err) {
+                console.error("Error in /joined-events:", err);  // <- log full error
+                res.status(500).send({ message: "Internal server error" });
+            }
+        });
+
+
 
 
         await client.db("admin").command({ ping: 1 });
