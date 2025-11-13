@@ -27,7 +27,7 @@ app.get('/', (req, res) => {
 
 async function run() {
     try {
-        await client.connect();
+        // await client.connect();
         const sebajatraDB = client.db('sebajatra_db');
         const upcomingEvents = sebajatraDB.collection('upcomingEvents')
         const userCollection = sebajatraDB.collection('users');
@@ -114,13 +114,6 @@ async function run() {
             const result = await createEventCollection.deleteOne({ _id: new ObjectId(id) });
             res.send(result);
         })
-
-        // Join an event
-        // app.post('/joined-events', async (req, res) => {
-        //     const joinedEvent = req.body;
-        //     const result = await joinedEventsCollection.insertOne(joinedEvent);
-        //     res.send(result);
-        // });
 
         app.post("/joined-events", async (req, res) => {
             try {
@@ -214,7 +207,7 @@ async function run() {
 
 
 
-        await client.db("admin").command({ ping: 1 });
+        // await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
     } finally {
         // await client.close();
